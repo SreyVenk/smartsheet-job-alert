@@ -2,7 +2,7 @@ name: Smartsheet Job Alert
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 14 * * *"
   workflow_dispatch:
 
 permissions:
