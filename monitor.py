@@ -46,9 +46,48 @@ def is_relevant_job(job):
     title = job.get("title", "").lower()
     location = job.get("location", {}).get("name", "").lower()
 
-    combined_text = f"{title} {location}"
+    # ONLY USA jobs
+    usa_indicators = [
+        "usa",
+        "united states",
+        "us remote",
+        "remote, usa",
+        "-remote, usa-",
+    ]
 
-    return any(keyword in combined_text for keyword in KEYWORDS)
+    if not any(indicator in location for indicator in usa_indicators):
+        return False
+
+    # Reject senior-level roles
+    blocked_keywords = [
+        "senior",
+        "staff",
+        "principal",
+        "manager",
+        "director",
+        "lead",
+        "architect",
+        "ii",
+        "iii",
+        "iv",
+    ]
+
+    if any(keyword in title for keyword in blocked_keywords):
+        return False
+
+    # Target entry/junior roles
+    desired_keywords = [
+        "software engineer",
+        "software engineer i",
+        "associate software engineer",
+        "new grad",
+        "entry level",
+        "backend engineer",
+        "frontend engineer",
+        "full stack engineer",
+    ]
+
+    return any(keyword in title for keyword in desired_keywords)
 
 
 def format_job(job):
