@@ -55,7 +55,25 @@ def is_entry_level_software_job(job):
 
 
 def is_relevant_job(job):
-    return is_usa_job(job) and is_entry_level_software_job(job)
+    title = job.get("title", "").lower()
+
+    desired_keywords = [
+        "software engineer",
+        "backend engineer",
+        "frontend engineer",
+        "full stack engineer",
+    ]
+
+    blocked_keywords = [
+        "manager",
+        "director",
+        "architect",
+    ]
+
+    if any(blocked in title for blocked in blocked_keywords):
+        return False
+
+    return any(keyword in title for keyword in desired_keywords)
 
 
 def format_job(job):
