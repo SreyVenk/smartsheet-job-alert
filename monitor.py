@@ -10,17 +10,6 @@ import requests
 GREENHOUSE_URL = "https://boards-api.greenhouse.io/v1/boards/smartsheet/jobs?content=false"
 SEEN_FILE = Path("seen_jobs.json")
 
-KEYWORDS = [
-    "software engineer",
-    "software engineer i",
-    "associate software engineer",
-    "new grad",
-    "entry level",
-    "backend engineer",
-    "frontend engineer",
-    "full stack engineer",
-]
-
 
 def load_seen_jobs():
     if not SEEN_FILE.exists():
@@ -42,23 +31,20 @@ def fetch_jobs():
     return data.get("jobs", [])
 
 
-def is_relevant_job(job):
-    title = job.get("title", "").lower()
+def is_usa_job(job):
     location = job.get("location", {}).get("name", "").lower()
 
-    # ONLY USA jobs
-    usa_indicators = [
-        "usa",
-        "united states",
-        "us remote",
-        "remote, usa",
-        "-remote, usa-",
-    ]
+    return (
+        "usa" in location
+        or "united states" in location
+        or "remote, usa" in location
+        or "-remote, usa-" in location
+    )
 
-    if not any(indicator in location for indicator in usa_indicators):
-        return False
 
-    # Reject senior-level roles
+def is_entry_level_software_job(job):
+    title = job.get("title", "").lower()
+
     blocked_keywords = [
         "senior",
         "staff",
@@ -67,27 +53,26 @@ def is_relevant_job(job):
         "director",
         "lead",
         "architect",
-        "ii",
-        "iii",
-        "iv",
+        " ii",
+        " iii",
+        " iv",
     ]
 
-    if any(keyword in title for keyword in blocked_keywords):
+    if any(blocked in title for blocked in blocked_keywords):
         return False
 
-    # Target entry/junior roles
     desired_keywords = [
-        "software engineer",
         "software engineer i",
         "associate software engineer",
         "new grad",
         "entry level",
-        "backend engineer",
-        "frontend engineer",
-        "full stack engineer",
     ]
 
     return any(keyword in title for keyword in desired_keywords)
+
+
+def is_relevant_job(job):
+    return is_usa_job(job) and is_entry_level_software_job(job)
 
 
 def format_job(job):
@@ -103,9 +88,9 @@ def send_email_alert(new_jobs):
     password = os.environ["EMAIL_PASSWORD"]
     recipient = os.environ["EMAIL_RECIPIENT"]
 
-    subject = f"🚨 New Smartsheet SWE Job Alert: {len(new_jobs)} new match(es)"
+    subject = f"🚨 New Smartsheet SWE I Job Alert: {len(new_jobs)} new match(es)"
 
-    body = "New Smartsheet job posting(s) matched your search:\n\n"
+    body = "New USA-based entry-level Smartsheet software job posting(s):\n\n"
     body += "\n\n---\n\n".join(format_job(job) for job in new_jobs)
 
     message = EmailMessage()
@@ -135,7 +120,7 @@ def main():
         send_email_alert(relevant_new_jobs)
         print(f"Sent alert for {len(relevant_new_jobs)} new relevant job(s).")
     else:
-        print("No new relevant Smartsheet jobs found.")
+        print("No new relevant USA entry-level Smartsheet software jobs found.")
 
     save_seen_jobs(current_job_ids)
 
